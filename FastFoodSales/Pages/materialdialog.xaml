@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:DAQ.Pages"
+             xmlns:rules="clr-namespace:DAQ.Rules"
              xmlns:main="clr-namespace:DAQ"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d" 
@@ -75,13 +76,19 @@
                             <TextBlock>
                           骨架部件名称  Bobbin Part Name
                             </TextBlock>
-                            <ComboBox Text="{Binding BobbinPartName}"
-                                 Margin="0 8 0 0"
-                                 IsEditable="True"
+                            <ComboBox  Margin="0 8 0 0"  IsEditable="True"
                                  HorizontalAlignment="Stretch"                        >
                                 <ComboBoxItem>BASE-ERX1815/CE-8P+LT (LOTES)</ComboBoxItem>
                                 <ComboBoxItem>BASE-ERX1815/CE-8P+EVW (EVERWIN)</ComboBoxItem>
                                 <ComboBoxItem>BASE-ERX1815/CE-8P+LY (LYT)</ComboBoxItem>
+                                <ComboBox.Text>
+                                        <Binding Path="BobbinPartName" UpdateSourceTrigger="PropertyChanged" ValidatesOnDataErrors="True">
+                                         <Binding.ValidationRules>
+                                          <rules:BarcodeRule/>
+                                          </Binding.ValidationRules>
+                                           
+                                      </Binding>
+                                </ComboBox.Text>
                             </ComboBox>
                         </StackPanel>
                         <StackPanel Margin="10">
@@ -139,32 +146,51 @@
                         />
                         </StackPanel>
                         <StackPanel Margin="10">
-                            <TextBlock>
-                                
+                            <TextBlock>                             
                            二维码1坐标 Laser Location 1
                             </TextBlock>
-                            <TextBox Text="{Binding LaserLoc1}"
-                                 Margin="0 8 0 0"
-                                 HorizontalAlignment="Stretch"
-                        />
+                            <Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition Width="auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding LaserLoc1}"
+                                         Margin="0 8 0 0"
+                                            HorizontalAlignment="Stretch"/>
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding CheckLoc1}"/>
+                                </Grid>
+                            </Grid>
                         </StackPanel>
                         <StackPanel Margin="10">
                             <TextBlock>
                           二维码2坐标  Laser Location 2
                             </TextBlock>
-                            <TextBox Text="{Binding LaserLoc2}"
-                                 Margin="0 8 0 0"
-                                 HorizontalAlignment="Stretch"
-                        />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding LaserLoc2}"
+                                         Margin="0 8 0 0"
+                                            HorizontalAlignment="Stretch"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding CheckLoc2}"/>
+                            </Grid>
                         </StackPanel>
                         <StackPanel Margin="10">
                             <TextBlock>
                           二维码3坐标  Laser Location 3
                             </TextBlock>
-                            <TextBox Text="{Binding LaserLoc3}"
-                                 Margin="0 8 0 0"
-                                 HorizontalAlignment="Stretch"
-                        />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding LaserLoc3}"
+                                         Margin="0 8 0 0"
+                                            HorizontalAlignment="Stretch"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding CheckLoc3}"/>
+                            </Grid>
                         </StackPanel>
                         <StackPanel Margin="10">
                             <TextBlock>

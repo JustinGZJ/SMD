@@ -297,6 +297,7 @@
     <Compile Include="Pages\StatusViewModel.cs" />
     <Compile Include="Pages\SubFilePathAttribute.cs" />
     <Compile Include="Pages\TBarcode.cs" />
+    <Compile Include="Rules\BarcodeRule.cs" />
     <Compile Include="Service\IoService.cs" />
     <Compile Include="Service\LaserService.cs" />
     <Compile Include="Service\PostMsg.cs" />

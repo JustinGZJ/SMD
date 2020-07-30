@@ -163,6 +163,7 @@ namespace DAQ
                 settings.Save();
             }
         }
+
         public string LaserLoc2
         {
             get => settings.LaserLoc2;
@@ -182,6 +183,34 @@ namespace DAQ
                 settings.Save();
             }
         }
+
+        public bool CheckLoc1
+        {
+            get => settings.checkLoc1;
+            set
+            {
+                settings.checkLoc1 = value;
+                settings.Save();
+            }
+        }
+        public bool CheckLoc2
+        {
+            get => settings.checkLoc2;
+            set
+            {
+                settings.checkLoc2 = value;
+                settings.Save();
+            }
+        }
+        public bool CheckLoc3
+        {
+            get => settings.checkLoc3;
+            set
+            {
+                settings.checkLoc3 = value;
+                settings.Save();
+            }
+        }
         public string SaveRootPath
         {
             get => settings.SaveRootPath;
@@ -191,23 +220,24 @@ namespace DAQ
                 settings.Save();
             }
         }
-        public MaterialManagerViewModel MaterialManager =>new MaterialManagerViewModel();
-        public async Task ShowSettingDialog()
-        {
+        public static MaterialManagerViewModel MaterialManager { get; } = new MaterialManagerViewModel();
+        //public async Task ShowSettingDialog()
+        //{
 
-            var dialog = new MaterialManagerView()
-            {
-                DataContext = MaterialManager
-            };
-            await DialogHost.Show(dialog, "root", ((sender, args) => { }),
-                ((sender, args) => { MaterialManager.Manager.Save(); }));
-        }
+        //    var dialog = new MaterialManagerView()
+        //    {
+        //        DataContext = MaterialManager
+        //    };
+        //    await DialogHost.Show(dialog, "root", ((sender, args) => { }),
+        //        ((sender, args) => { MaterialManager.Manager.Save(); }));
+        //}
 
         public async Task ShowUserSetting()
         {
             var dialog=new materialdialog();
             dialog.DataContext = this;
-            await DialogHost.Show(dialog,closingEventHandler:(s,e)=>MaterialManager.Manager.Save());
+            await DialogHost.Show(dialog);
+            MaterialManager.Manager.Save();
         }
 
 
