@@ -34,6 +34,11 @@ namespace DAQ.Service
             return index < 4 && _inputs[index];
         }
 
+        public bool[] GetOutputs()
+        {
+            return _outputs;
+        }
+
         public void SetOutput(uint index, bool value)
         {
             if (index < (_outputs.Length - 1))

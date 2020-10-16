@@ -19,6 +19,8 @@
             <TextBox Margin="5 0"  IsReadOnly="True" Text="{Binding markingNo,Mode=OneWay}" Width="50"></TextBox>
             <Button Margin="5 0" Command="{s:Action GetMarkingNo}" Style="{StaticResource MaterialDesignFlatButton}" >获取</Button>
             <Button Margin="5 0"  Command="{s:Action DoSaveData}" Style="{StaticResource MaterialDesignFlatButton}" >触发</Button>
+            <CheckBox IsChecked="{Binding Input,Mode=OneWay}" >G4反馈</CheckBox>
+            <CheckBox IsChecked="{Binding Output,Mode=OneWay}">PC输出</CheckBox>
         </StackPanel>
         <ListView Grid.Row="2" ItemsSource="{Binding Lasers}" Foreground="Black" Background="Transparent">
             <ListView.View>

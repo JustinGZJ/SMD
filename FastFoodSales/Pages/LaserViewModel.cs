@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using DAQ.Properties;
 using DAQ.Service;
 using MaterialDesignThemes.Wpf;
 using Stylet;
 using StyletIoC;
-using Timer=System.Timers.Timer;
 
 namespace DAQ.Pages
 {
@@ -17,18 +17,27 @@ namespace DAQ.Pages
     {
         private LaserService _laser;
         private IIoService _ioService;
+        DispatcherTimer timer = new DispatcherTimer();
         public LaserViewModel([Inject]LaserService laser,[Inject]IIoService ioService)
         {
+            timer.Interval = TimeSpan.FromMilliseconds(100);
+            timer.Tick += Timer_Tick;
+            timer.Start();
             _laser = laser;
             _ioService = ioService;
-            Task.Run((() =>
-            {
-                laser?.CreateServer();
-            }));
             _laser.LaserHandler += _laser_LaserHandler;
         }
+        private bool input;
+        private bool output;
+        public bool Input { get => input; set => SetAndNotify(ref input, value); }
+        public bool Output { get => output; set => SetAndNotify(ref output, value); }
 
-
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            Input = _ioService.GetInput(0);
+            Output = _ioService.GetOutputs()[0];
+           // throw new NotImplementedException();
+        }
 
         public BindableCollection<Laser> Lasers { get; } = new BindableCollection<Laser>(){};
 
@@ -49,11 +58,6 @@ namespace DAQ.Pages
           markingNo = await Task.Run<int>(() =>_laser.GetMarkingNo());
           Settings.Default.MarkingNo = markingNo;
           Settings.Default.Save();
-        }
-
-        public async void DoSaveData()
-        {
-           await Task.Run(() => { _laser.GetLaserData(); });
         }
     }
 }

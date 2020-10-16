@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.Net;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
+
 using DAQ.Pages;
 using DAQ.Properties;
 using SimpleTCP;
@@ -16,6 +18,7 @@ namespace DAQ.Service
     {
         bool GetInput(uint index);
         void SetOutput(uint index, bool value);
+        bool[] GetOutputs();
         bool IsConnected { get; }
     }
 
@@ -24,9 +27,7 @@ namespace DAQ.Service
         IEventAggregator Events;
         private readonly FileSaverFactory _factory;
         SimpleTcpClient _laserClient = null;
-
-        private bool laserFinish = false;
-        Properties.Settings settings = Settings.Default;
+        Settings settings = Settings.Default;
         private IIoService _ioService;
         public event EventHandler<Laser> LaserHandler;
 
@@ -35,10 +36,15 @@ namespace DAQ.Service
             Events = @event;
             _factory = factory;
             _ioService = ioService;
+            Task.Run(() =>
+            {
+                CreateServer();
+            });
         }
 
         public int GetMarkingNo()
         {
+            
             Events.PostMessage($"LASER SEND:FE");
             var m = _laserClient.WriteLineAndGetReply("FE" + Environment.NewLine, TimeSpan.FromMilliseconds(1000));
             Events.PostMessage($"LASER RECV:{m?.MessageString}");
@@ -60,7 +66,7 @@ namespace DAQ.Service
                 return -1;
             }
         }
-
+        Subject<bool> trigger = new Subject<bool>();
         public void CreateServer()
         {
             try
@@ -82,26 +88,25 @@ namespace DAQ.Service
                 _ioService.SetOutput(0, false);
                 while (true)
                 {
+                 
                     if (!_ioService.IsConnected)
                     {
                         Events.PostError("远程IO未连接");
-                        await Task.Delay(500);
+                        await Task.Delay(100);
                     }
-                    var input = _ioService.GetInput(0);
-                    if (input)
-                    {
-                        GetProcTime("获取镭射等级", () =>
-                         {
-                             GetLaserData();
-                         });
-
-                        SpinWait.SpinUntil(() => _ioService.GetInput(0) == false);
-                    }
+                    trigger.OnNext(_ioService.GetInput(0));
                     await Task.Delay(10);
                 }
             });
+            trigger.OnNext(false);
+          
+            trigger.Buffer(2, 1).Where(m => ((!m[0]) && (m[1]))).Subscribe((m) =>
+            {
+                GetProcTime("获取镭射二维码等级", GetLaserData);
+            });
+           
         }
-        private void GetProcTime(String name, Action action)
+        private void GetProcTime(string name, Action action)
         {
 
             Stopwatch stopwatch = new Stopwatch();
@@ -133,7 +138,7 @@ namespace DAQ.Service
 
         private void ReadLaserCode(int i)
         {
-            var locations = new string[] { settings.LaserLoc1, settings.LaserLoc2, settings.LaserLoc3 };     
+            var locations = new string[] { settings.LaserLoc1, settings.LaserLoc2, settings.LaserLoc3 };
             for (int j = 0; j < 2; j++)
             {
                 string cmd = $"WX,Check2DCode=1,{locations[i]}{Environment.NewLine}";
@@ -167,9 +172,14 @@ namespace DAQ.Service
                                 BobbinToolNo = settings.BobbinToolNo,
                                 ShiftName = settings.ShiftName
                             };
-                            OnLaserHandler(laser);
-                            _factory.GetFileSaver<Laser>((nunit).ToString()).Save(laser);
-                            _factory.GetFileSaver<Laser>((nunit).ToString(), @"D:\\SumidaFile\Monitor").Save(laser);
+
+                            Task.Run(() =>
+                            {
+                                OnLaserHandler(laser);
+                                _factory.GetFileSaver<Laser>((nunit).ToString()).Save(laser);
+                                _factory.GetFileSaver<Laser>((nunit).ToString(), @"D:\\SumidaFile\Monitor").Save(laser);
+                            });
+
                             break;
                         }
                         else
@@ -227,9 +237,13 @@ namespace DAQ.Service
                                 BobbinToolNo = settings.BobbinToolNo,
                                 ShiftName = settings.ShiftName
                             };
-                            OnLaserHandler(laser);
-                            _factory.GetFileSaver<Laser>((nunit).ToString()).Save(laser);
-                            _factory.GetFileSaver<Laser>((nunit).ToString(), @"D:\\SumidaFile\Monitor").Save(laser);
+
+                            Task.Run(() =>
+                            {
+                                OnLaserHandler(laser);
+                                _factory.GetFileSaver<Laser>((nunit).ToString()).Save(laser);
+                                _factory.GetFileSaver<Laser>((nunit).ToString(), @"D:\\SumidaFile\Monitor").Save(laser);
+                            });
                         }
                         else
                         {
