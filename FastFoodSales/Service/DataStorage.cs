@@ -48,7 +48,7 @@ namespace DAQ.Service
                 }
                 catch (Exception ex)
                 {
-
+                    _events.PostError(ex);
                 }            
             }
         }

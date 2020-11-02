@@ -79,6 +79,7 @@ namespace DAQ.Service
 
         public void Dispose()
         {
+            _server.DelimiterDataReceived -= Client_DelimiterDataReceived;
             _server?.Stop();
         }
 
@@ -89,11 +90,11 @@ namespace DAQ.Service
                 var addr = ((IPEndPoint)e.TcpClient.Client.RemoteEndPoint).Address.GetAddressBytes()[3];
                 var str = e.MessageString.Trim('\r', '\n');
                 Events.Publish(str, addr.ToString());
-          //      Events.Publish(new MsgItem { Level = "D", Time = DateTime.Now, Value = ((IPEndPoint)e.TcpClient.Client.RemoteEndPoint).Address.ToString() + ":" + str });
+               Events.PublishOnUIThread(new MsgItem { Level = "D", Time = DateTime.Now, Value = ((IPEndPoint)e.TcpClient.Client.RemoteEndPoint).Address.ToString() + ":" + str });
             }
             catch (Exception ex)
             {
-                Events.Publish(new MsgItem { Level = "E", Time = DateTime.Now, Value = ex.Message });
+                Events.PublishOnUIThread(new MsgItem { Level = "E", Time = DateTime.Now, Value = ex.Message });
             }
         }
 

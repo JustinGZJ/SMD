@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using DAQ.Pages;
 using DAQ.Properties;
+using Serilog;
 using SimpleTCP;
 using Stylet;
 using StyletIoC;
@@ -26,6 +27,7 @@ namespace DAQ.Service
     {
         IEventAggregator Events;
         private readonly FileSaverFactory _factory;
+        private readonly ILogger logger;
         SimpleTcpClient _laserClient = null;
         Settings settings = Settings.Default;
         private IIoService _ioService;
@@ -33,10 +35,11 @@ namespace DAQ.Service
         ActionBlock<(int, Message)> block;
         ActionBlock<(int, Message)> block2;
 
-        public LaserService([Inject] IEventAggregator @event, [Inject] IIoService ioService, [Inject] FileSaverFactory factory)
+        public LaserService([Inject] IEventAggregator @event, [Inject] IIoService ioService, [Inject] FileSaverFactory factory,[Inject] ILogger logger) 
         {
             Events = @event;
             _factory = factory;
+            this.logger = logger;
             _ioService = ioService;
             enables = new bool[] { settings.checkLoc1, settings.checkLoc2, settings.checkLoc3 };
             locations = new string[] { settings.LaserLoc1, settings.LaserLoc2, settings.LaserLoc3 };
@@ -65,7 +68,8 @@ namespace DAQ.Service
                  OnLaserHandler(laser);
                  _factory.GetFileSaver<Laser>((f.Item1).ToString()).Save(laser);
                  _factory.GetFileSaver<Laser>((f.Item1).ToString(), @"D:\\SumidaFile\Monitor").Save(laser);
-             });
+             })
+            ;
             block2 = new ActionBlock<(int, Message)>(f =>
             {
                 var splits = f.Item2.MessageString.Split(',');
@@ -120,7 +124,7 @@ namespace DAQ.Service
                 return -1;
             }
         }
-        Subject<bool> trigger = new Subject<bool>();
+        IObservable<bool> trigger;
         public void CreateServer()
         {
             try
@@ -135,63 +139,53 @@ namespace DAQ.Service
                 Events.PostError(EX);
                 return;
             }
+            _ioService.SetOutput(0, false);
+            trigger = Observable.Interval(TimeSpan.FromMilliseconds(10)).Select((x) => _ioService.GetInput(0));
 
-
-            Task.Run(async () =>
-            {
-                _ioService.SetOutput(0, false);
-                while (true)
-                {
-
-                    if (!_ioService.IsConnected)
-                    {
-                        Events.PostError("远程IO未连接");
-                        await Task.Delay(100);
-                    }
-                    trigger.OnNext(_ioService.GetInput(0));
-                    await Task.Delay(10);
-                }
-            });
-            trigger.OnNext(false);
-
-
-            
             trigger.Buffer(2, 1).Where(m => ((!m[0]) && (m[1]))).Subscribe((m) =>
             {
-                Stopwatch stopwatch = new Stopwatch();
-                Events.PostMessage(  "---------------读取镭射开始--------------------");
-                stopwatch.Start();
-                GetLaserData();
-                var tm = stopwatch.Elapsed;
-                stopwatch.Stop();
-                Events.PostMessage($"读取镭射耗时: " + tm.TotalSeconds + "S");
+                GetProcTime("获取镭射数据", GetLaserData);
             });
+          //  trigger.OnNext(false);
 
         }
-        private  void GetProcTime(string name, Action action)
+        private void GetProcTime(string name, Action action)
         {
 
             Stopwatch stopwatch = new Stopwatch();
-            Events.PostMessage(name + "开始");
+            logger.Information($"{name}开始");
+            //  Events.PostMessage(name + "开始");
             stopwatch.Start();
-            action();
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex.Message);
+               // throw;
+            }
             stopwatch.Stop();
-            Events.PostMessage($"{name}耗时: " + stopwatch.ElapsedMilliseconds / 1000.0 + "S");
+            logger.Information($"{name}耗时: " + stopwatch.ElapsedMilliseconds / 1000.0 + "S");
         }
         bool[] enables;
         string[] locations;
         public void GetLaserData()
         {
-            _ioService.SetOutput(0, true);
-            for (int i = 0; i < 3; i++)
+           _ioService.SetOutput(0, true);
+            GetProcTime("循环3次", () =>
             {
-                if (enables[i])
+                for (int i = 0; i < 3; i++)
                 {
-                    var index = i;
-                    GetProcTime($"读取第{i}组镭射二维码", () => { ReadLaserCode(index); });
+                    if (enables[i])
+                    {
+                        var index = i;
+                        GetProcTime($"读取第{i + 1}组镭射二维码", () => { ReadLaserCode(index); });
+                    }
                 }
-            }
-            _ioService.SetOutput(0, false);
+            });
+
+          _ioService.SetOutput(0, false);
         }
 
         private void ReadLaserCode(int i)

@@ -7,12 +7,12 @@ namespace DAQ.Service
     {
         public static void PostError(this IEventAggregator @event,Exception exception)
         {
-            @event?.Publish(new MsgItem { Level = "E", Time = DateTime.Now, Value = exception.Message });
+            @event?.PublishOnUIThread(new MsgItem { Level = "E", Time = DateTime.Now, Value = exception.Message });
         }
 
         public static void PostMessage(this IEventAggregator @event, string message)
         {
-            @event?.Publish(new MsgItem { Level = "D", Time = DateTime.Now, Value = message });
+            @event?.PublishOnUIThread(new MsgItem { Level = "D", Time = DateTime.Now, Value = message });
         }
 
     }

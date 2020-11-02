@@ -11,6 +11,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 using DAQ.Service;
+using System.Threading.Tasks.Dataflow;
 
 namespace DAQ.Pages
 {
@@ -42,7 +43,7 @@ namespace DAQ.Pages
     public class MaterialViewModel : Screen, IHandle<string>
     {
         public int SelectedMode { get; set; }
-
+        ActionBlock<(int,Scan)> ActionBlock;
         public int Capcity { get; set; }
         private int _ipunit;
         public int IpUnit
@@ -75,6 +76,12 @@ namespace DAQ.Pages
             this.service = service;
             this.Capcity = capcity;
             _materialManager = materialManager;
+            ActionBlock = new ActionBlock<(int,Scan)>(scan =>
+              {
+                  _factory.GetFileSaver<Scan>((scan.Item1 + 1).ToString()).Save(scan.Item2);
+                  _factory.GetFileSaver<Scan>((scan.Item1 + 1).ToString(), @"D:\\SumidaFile\Monitor").Save(scan.Item2);
+              });
+
         }
         public int ItemsHeight => Capcity / 4 * 40 + 20;
         protected override void OnViewLoaded()
@@ -132,8 +139,8 @@ namespace DAQ.Pages
                     FlyWireLotNo = this._materialManager.FlyWires[mIndex],
                     TubeLotNo = this._materialManager.Tubes[mIndex]
                 };
-                _factory.GetFileSaver<Scan>((mIndex+1).ToString()).Save(scan);
-                _factory.GetFileSaver<Scan>((mIndex+1).ToString(), @"D:\\SumidaFile\Monitor").Save(scan);
+
+                ActionBlock.Post((mIndex, scan));
             }
         }
     }
