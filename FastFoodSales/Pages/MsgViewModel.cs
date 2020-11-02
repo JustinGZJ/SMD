@@ -24,7 +24,7 @@ namespace DAQ.Pages
         {
             try
             {
-                if (Items.Count > 100)
+                if (Items.Count > 20)
                 {
                     Items.RemoveAt(0);
                 }

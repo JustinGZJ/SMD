@@ -73,118 +73,118 @@ namespace DAQ.Service
             this._transform = transform;
             _readwriter = readwriter;
             Load();
-            Task.Run(() =>
-           {
-               while (true)
-               {
-                   lock (_enable)
-                   {
-                    //   对数据进行分组，每组内间隔不超过PDU
-                       int arrIndex = 0;
-                       var sortedVars = DataValues.OrderBy(x => x.StartIndex).ToList();
-                       var arrList = new List<List<VAR>> { new List<VAR>() { sortedVars[0] } };
-                       for (int i = 1; i < sortedVars.Count; i++)
-                       {
-                           var a = sortedVars[i].StartIndex + sortedVars[i].GetLength();
-                           var b = sortedVars[i - 1].StartIndex;
-                           if (a - b < PDU)
-                           {
-                               arrList[arrIndex].Add(sortedVars[i]);
-                           }
-                           else
-                           {
-                               arrList.Add(new List<VAR>());
-                               arrIndex++;
-                           }
-                       }
-                       foreach (var list in arrList)
-                       {
-                        //   获取组内需要请求的字数
-                           int nShorts = 0;
-                           foreach (var s in list)
-                           {
-                               nShorts += s.GetLength();
-                           }
-                           if (nShorts > 10)
-                           {
-                               var s = list.First().StartIndex;
-                               var l = list.Last().GetLength() + list.Last().StartIndex;
-                               var r = _readwriter.Read($"x:3;{s}", (ushort)(l - s));
-                               if (r.IsSuccess)
-                               {
-                                   var buffer = r.Content;
-                                   foreach (var v in list)
-                                   {
-                                       switch (v.Type)
-                                       {
-                                           case TYPE.BOOL:
-                                               var cs = transform.TransUInt16(buffer, (v.StartIndex - s) * 2);
-                                               v.Value = (cs & (1 << v.Tag)) > 0;
-                                               break;
-                                           case TYPE.FLOAT:
-                                               v.Value = transform.TransSingle(buffer, (v.StartIndex - s) * 2);
-                                               break;
-                                           case TYPE.INT:
-                                               v.Value = transform.TransInt32(buffer, (v.StartIndex - s) * 2);
-                                               break;
-                                           case TYPE.SHORT:
-                                               v.Value = transform.TransInt16(buffer, (v.StartIndex - s) * 2);
-                                               break;
-                                           case TYPE.STRING:
-                                               v.Value = transform.TransString(buffer, (v.StartIndex - s) * 2, v.Tag, Encoding.UTF8);
-                                               break;
-                                       }
-                                       v.Time = DateTime.Now;
-                                   }
-                               }
-                               else
-                               {
-                                   _events.Publish(new MsgItem()
-                                   {
-                                       Level = "E",
-                                       Time = DateTime.Now,
-                                       Value = "Read from data server fail"
-                                   });
-                               }
-                           }
-                           else
-                           {
-                               foreach (var v in list)
-                               {
+           // Task.Run(() =>
+           //{
+           //    while (true)
+           //    {
+           //        lock (_enable)
+           //        {
+           //         //   对数据进行分组，每组内间隔不超过PDU
+           //            int arrIndex = 0;
+           //            var sortedVars = DataValues.OrderBy(x => x.StartIndex).ToList();
+           //            var arrList = new List<List<VAR>> { new List<VAR>() { sortedVars[0] } };
+           //            for (int i = 1; i < sortedVars.Count; i++)
+           //            {
+           //                var a = sortedVars[i].StartIndex + sortedVars[i].GetLength();
+           //                var b = sortedVars[i - 1].StartIndex;
+           //                if (a - b < PDU)
+           //                {
+           //                    arrList[arrIndex].Add(sortedVars[i]);
+           //                }
+           //                else
+           //                {
+           //                    arrList.Add(new List<VAR>());
+           //                    arrIndex++;
+           //                }
+           //            }
+           //            foreach (var list in arrList)
+           //            {
+           //             //   获取组内需要请求的字数
+           //                int nShorts = 0;
+           //                foreach (var s in list)
+           //                {
+           //                    nShorts += s.GetLength();
+           //                }
+           //                if (nShorts > 10)
+           //                {
+           //                    var s = list.First().StartIndex;
+           //                    var l = list.Last().GetLength() + list.Last().StartIndex;
+           //                    var r = _readwriter.Read($"x:3;{s}", (ushort)(l - s));
+           //                    if (r.IsSuccess)
+           //                    {
+           //                        var buffer = r.Content;
+           //                        foreach (var v in list)
+           //                        {
+           //                            switch (v.Type)
+           //                            {
+           //                                case TYPE.BOOL:
+           //                                    var cs = transform.TransUInt16(buffer, (v.StartIndex - s) * 2);
+           //                                    v.Value = (cs & (1 << v.Tag)) > 0;
+           //                                    break;
+           //                                case TYPE.FLOAT:
+           //                                    v.Value = transform.TransSingle(buffer, (v.StartIndex - s) * 2);
+           //                                    break;
+           //                                case TYPE.INT:
+           //                                    v.Value = transform.TransInt32(buffer, (v.StartIndex - s) * 2);
+           //                                    break;
+           //                                case TYPE.SHORT:
+           //                                    v.Value = transform.TransInt16(buffer, (v.StartIndex - s) * 2);
+           //                                    break;
+           //                                case TYPE.STRING:
+           //                                    v.Value = transform.TransString(buffer, (v.StartIndex - s) * 2, v.Tag, Encoding.UTF8);
+           //                                    break;
+           //                            }
+           //                            v.Time = DateTime.Now;
+           //                        }
+           //                    }
+           //                    else
+           //                    {
+           //                        _events.Publish(new MsgItem()
+           //                        {
+           //                            Level = "E",
+           //                            Time = DateTime.Now,
+           //                            Value = "Read from data server fail"
+           //                        });
+           //                    }
+           //                }
+           //                else
+           //                {
+           //                    foreach (var v in list)
+           //                    {
 
-                                   switch (v.Type)
-                                   {
-                                       case TYPE.BOOL:
-                                           var r = _readwriter.ReadUInt16($"x=3;{v.StartIndex}");
-                                           v.Value = (r.Content & (1 << v.Tag)) > 0;
-                                           break;
-                                       case TYPE.FLOAT:
-                                           var f = _readwriter.ReadFloat($"x=3;{v.StartIndex}");
-                                           v.Value = f.Content;
-                                           break;
-                                       case TYPE.INT:
-                                           var i = _readwriter.ReadInt32($"x=3;{v.StartIndex}");
-                                           v.Value = i.Content;
-                                           break;
-                                       case TYPE.STRING:
-                                           var s = _readwriter.ReadString($"x=3;{v.StartIndex}", (ushort)v.Tag);
-                                           v.Value = s.Content;
-                                           break;
-                                       case TYPE.SHORT:
-                                           var us = _readwriter.ReadInt16($"x=3;{v.StartIndex}");
-                                           v.Value = us.Content;
-                                           break;
-                                   }
-                                   v.Time = DateTime.Now;
-                               }
-                           }
-                       }
-                       Refresh();
-                   }
+           //                        switch (v.Type)
+           //                        {
+           //                            case TYPE.BOOL:
+           //                                var r = _readwriter.ReadUInt16($"x=3;{v.StartIndex}");
+           //                                v.Value = (r.Content & (1 << v.Tag)) > 0;
+           //                                break;
+           //                            case TYPE.FLOAT:
+           //                                var f = _readwriter.ReadFloat($"x=3;{v.StartIndex}");
+           //                                v.Value = f.Content;
+           //                                break;
+           //                            case TYPE.INT:
+           //                                var i = _readwriter.ReadInt32($"x=3;{v.StartIndex}");
+           //                                v.Value = i.Content;
+           //                                break;
+           //                            case TYPE.STRING:
+           //                                var s = _readwriter.ReadString($"x=3;{v.StartIndex}", (ushort)v.Tag);
+           //                                v.Value = s.Content;
+           //                                break;
+           //                            case TYPE.SHORT:
+           //                                var us = _readwriter.ReadInt16($"x=3;{v.StartIndex}");
+           //                                v.Value = us.Content;
+           //                                break;
+           //                        }
+           //                        v.Time = DateTime.Now;
+           //                    }
+           //                }
+           //            }
+           //            Refresh();
+           //        }
 
-                   System.Threading.Thread.Sleep(100);
-               }
-           });
+           //        System.Threading.Thread.Sleep(100);
+           //    }
+           //});
         }
         public void AddItem(VAR var)
         {

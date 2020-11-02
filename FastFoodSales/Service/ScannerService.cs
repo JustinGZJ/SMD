@@ -71,7 +71,7 @@ namespace DAQ.Service
             var ips = _server.GetListeningIPs();
             ips.ForEach(x => Events.Publish(new MsgItem
             { Level = "D", Time = DateTime.Now, Value = "Listening IP: " + x.ToString() + ":9004" }));
-            Events.Publish(new MsgItem { Level = "D", Time = DateTime.Now, Value = "Server initialize: " + IPAddress.Any.ToString() + ":9004" });
+            Events.PublishOnUIThread(new MsgItem { Level = "D", Time = DateTime.Now, Value = "Server initialize: " + IPAddress.Any.ToString() + ":9004" });
             _server.Delimiter = 0x0d;
             _server.DelimiterDataReceived -= Client_DelimiterDataReceived;
             _server.DelimiterDataReceived += Client_DelimiterDataReceived;
@@ -89,7 +89,7 @@ namespace DAQ.Service
                 var addr = ((IPEndPoint)e.TcpClient.Client.RemoteEndPoint).Address.GetAddressBytes()[3];
                 var str = e.MessageString.Trim('\r', '\n');
                 Events.Publish(str, addr.ToString());
-                Events.Publish(new MsgItem { Level = "D", Time = DateTime.Now, Value = ((IPEndPoint)e.TcpClient.Client.RemoteEndPoint).Address.ToString() + ":" + str });
+          //      Events.Publish(new MsgItem { Level = "D", Time = DateTime.Now, Value = ((IPEndPoint)e.TcpClient.Client.RemoteEndPoint).Address.ToString() + ":" + str });
             }
             catch (Exception ex)
             {

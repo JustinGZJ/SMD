@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using HslCommunication.ModBus;
 
 namespace DAQ.Service
@@ -25,6 +26,7 @@ namespace DAQ.Service
                         _inputs[0] = r1.Content;
                         modbusTcp.WriteCoil("17", _outputs[0]);
                     }
+                    Thread.Sleep(10);
                 }
             });
         }

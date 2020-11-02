@@ -43,7 +43,7 @@ namespace DAQ.Pages
 
         private void _laser_LaserHandler(object sender, Laser e)
         {
-            if (Lasers.Count > 20)
+            if (Lasers.Count > 5)
                 Lasers.RemoveAt(0);
             Lasers.Add(e);
         }
